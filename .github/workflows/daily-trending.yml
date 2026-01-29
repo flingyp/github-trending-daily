@@ -1,0 +1,42 @@
+name: GitHub Trending Daily
+
+on:
+  schedule:
+    - cron: '0 9 * * *'  # 每天 09:00 UTC 执行
+  workflow_dispatch:     # 允许手动触发
+
+jobs:
+  send-trending:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run trending script
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # 📌 自定义模型配置（可选）
+          # 如果使用非 Anthropic 官方模型，可以配置以下变量：
+          ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
+          ANTHROPIC_MODEL: ${{ secrets.ANTHROPIC_MODEL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+          RESEND_TO_EMAIL: ${{ secrets.RESEND_TO_EMAIL }}
+          TRENDING_LIMIT: 10
+          TRENDING_TIMEFRAME: daily
+          LOG_LEVEL: info
+        run: bun run src/index.ts
+
+      - name: Display execution log
+        if: always()
+        run: |
+          echo "任务执行完成"
+          echo "检查日志以获取详细信息"

@@ -1,12 +1,22 @@
 {
   "name": "github-trending-daily",
-  "module": "index.ts",
+  "module": "src/index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "dev": "bun --hot run src/index.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.23",
+    "@modelcontextprotocol/sdk": "^1.25.3",
+    "cheerio": "^1.2.0",
+    "resend": "^6.9.1"
   }
 }
