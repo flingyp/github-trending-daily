@@ -1,14 +1,10 @@
-import type { TrendingAnalysisResult } from '../../types/index.js';
+import type { ProjectAnalysis, TrendingAnalysisResult } from '../../types/index.js'
 
 export function generateEmail(analysis: TrendingAnalysisResult): string {
-  const { date, projects, summary } = analysis;
+  const { date, projects, summary } = analysis
 
-  const languageStats = calculateLanguageStats(projects);
-  const avgScore = calculateAverageScore(projects);
-  const topProject = projects.reduce((best, current) => 
-    current.recommendationScore > best.recommendationScore ? current : best
-  );
-
+  const languageStats = calculateLanguageStats(projects)
+  const avgScore = calculateAverageScore(projects)
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -73,13 +69,14 @@ export function generateEmail(analysis: TrendingAnalysisResult): string {
     </div>
   </div>
 </body>
-</html>`;
+</html>`
 }
 
-function generateProjectCard(project: any, index: number): string {
-  const scoreColor = getScoreColor(project.recommendationScore);
-  const scoreBadge = project.recommendationScore >= 8 ? '🔥 高推荐' : 
-                    project.recommendationScore >= 6 ? '⭐ 推荐' : '👀 关注';
+function generateProjectCard(project: ProjectAnalysis, index: number): string {
+  const scoreColor = getScoreColor(project.recommendationScore)
+  const scoreBadge = project.recommendationScore >= 8
+    ? '🔥 高推荐'
+    : project.recommendationScore >= 6 ? '⭐ 推荐' : '👀 关注'
 
   return `
     <div class="p-6 border-b border-gray-100 ${index === 0 ? 'bg-yellow-50' : ''}">
@@ -142,29 +139,32 @@ function generateProjectCard(project: any, index: number): string {
         </a>
       </div>
     </div>
-  `;
+  `
 }
 
 function getScoreColor(score: number): string {
-  if (score >= 8) return 'bg-red-100 text-red-800';
-  if (score >= 6) return 'bg-yellow-100 text-yellow-800';
-  return 'bg-gray-100 text-gray-800';
+  if (score >= 8)
+    return 'bg-red-100 text-red-800'
+  if (score >= 6)
+    return 'bg-yellow-100 text-yellow-800'
+  return 'bg-gray-100 text-gray-800'
 }
 
-function calculateLanguageStats(projects: any[]): Record<string, number> {
-  const stats: Record<string, number> = {};
-  
+function calculateLanguageStats(projects: ProjectAnalysis[]): Record<string, number> {
+  const stats: Record<string, number> = {}
+
   for (const project of projects) {
     for (const lang of project.techStack) {
-      stats[lang] = (stats[lang] || 0) + 1;
+      stats[lang] = (stats[lang] || 0) + 1
     }
   }
-  
-  return stats;
+
+  return stats
 }
 
-function calculateAverageScore(projects: any[]): number {
-  if (projects.length === 0) return 0;
-  const total = projects.reduce((sum, p) => sum + p.recommendationScore, 0);
-  return total / projects.length;
+function calculateAverageScore(projects: ProjectAnalysis[]): number {
+  if (projects.length === 0)
+    return 0
+  const total = projects.reduce((sum, p) => sum + p.recommendationScore, 0)
+  return total / projects.length
 }

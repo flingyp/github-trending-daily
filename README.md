@@ -43,6 +43,10 @@ RESEND_API_KEY=re_xxx
 RESEND_FROM_EMAIL=noreply@yourdomain.com
 RESEND_TO_EMAIL=recipient@example.com
 
+# 邮件发送控制（可选）
+EMAIL_SEND_ENABLED=true  # 设为 false 则不发送邮件，改为输出内容
+NODE_ENV=development     # 开发模式下自动不发送邮件
+
 # 日志配置
 LOG_LEVEL=info
 ```
@@ -69,6 +73,8 @@ bun dev
    - `RESEND_API_KEY`：Resend API 密钥（必填）
    - `RESEND_FROM_EMAIL`：发件人邮箱（必填）
    - `RESEND_TO_EMAIL`：收件人邮箱（必填）
+   - `EMAIL_SEND_ENABLED`：是否发送邮件（可选，默认 true）
+   - `NODE_ENV`：开发模式下自动不发送邮件（可选，设置为 development）
 
 3. 开启 GitHub Actions 工作流（已配置每天 09:00 UTC 自动运行）
 

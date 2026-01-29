@@ -136,37 +136,37 @@ github-trending-daily/
 
  **核心实现**:
 ```typescript
-import { query } from "@anthropic-ai/claude-agent-sdk";
+import { query } from '@anthropic-ai/claude-agent-sdk'
 
 async function executeTask(agentPrompt: string): Promise<any[]> {
-  const messages: any[] = [];
+  const messages: any[] = []
 
   // 支持自定义模型配置
-  const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4.5";
+  const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4.5'
 
   for await (const message of query({
     prompt: agentPrompt,
     options: {
       model,
-      allowedTools: ["WebSearch"],
+      allowedTools: ['WebSearch'],
       mcpServers: {
         trending: {
-          command: "bun",
-          args: ["run", "./src/mcp/trendingServer.ts"]
+          command: 'bun',
+          args: ['run', './src/mcp/trendingServer.ts']
         }
       }
     }
   })) {
-    messages.push(message);
+    messages.push(message)
 
     // 检查是否完成
-    if (message.type === "result" &&
-        (message.subtype === "success" || message.subtype?.startsWith("error_"))) {
-      return messages;
+    if (message.type === 'result'
+      && (message.subtype === 'success' || message.subtype?.startsWith('error_'))) {
+      return messages
     }
   }
 
-  return messages;
+  return messages
 }
 ```
 
@@ -189,40 +189,40 @@ async function executeTask(agentPrompt: string): Promise<any[]> {
 
  **核心流程**:
 ```typescript
-import Anthropic from "@anthropic-ai/sdk";
+import Anthropic from '@anthropic-ai/sdk'
 
 class ToolUseExecutor {
-  private anthropic: Anthropic;
+  private anthropic: Anthropic
 
   constructor(apiKey: string) {
     // 支持自定义 API 端点
-    const baseURL = process.env.ANTHROPIC_BASE_URL;
-    const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4.5";
+    const baseURL = process.env.ANTHROPIC_BASE_URL
+    const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4.5'
 
     this.anthropic = new Anthropic({
       apiKey,
       baseURL: baseURL || undefined,
       defaultQuery: baseURL ? undefined : undefined
-    });
+    })
 
-    this.model = model;
+    this.model = model
   }
 
-  private model: string;
+  private model: string
 
   async execute(initialPrompt: string): Promise<any[]> {
-    let messages = [{ role: "user", content: initialPrompt }];
+    const messages = [{ role: 'user', content: initialPrompt }]
 
     // 定义工具：Web Search 工具
     const tools = [
       {
-        type: "web_search_20250305",
-        name: "web_search",
+        type: 'web_search_20250305',
+        name: 'web_search',
         max_uses: 20
       }
-    ];
+    ]
 
-    let maxTurns = 30; // 防止无限循环
+    let maxTurns = 30 // 防止无限循环
 
     while (maxTurns-- > 0) {
       const response = await this.anthropic.messages.create({
@@ -230,41 +230,41 @@ class ToolUseExecutor {
         max_tokens: 4096,
         tools,
         messages
-      });
+      })
 
       // 检查是否需要调用工具
-      const toolUses = response.content.filter((c: any) => c.type === "tool_use");
+      const toolUses = response.content.filter((c: any) => c.type === 'tool_use')
 
       if (toolUses.length === 0) {
-        return response.content; // Claude 完成响应
+        return response.content // Claude 完成响应
       }
 
       // 并行执行工具调用
       const toolResults = await Promise.allSettled(
         toolUses.map((tool: any) => this.callTool(tool))
-      );
+      )
 
       // 构造 tool_results
       const toolResultsContent = toolUses.map((toolUse: any, index: number) => ({
-        type: "tool_result",
+        type: 'tool_result',
         tool_use_id: toolUse.id,
-        content: toolResults[index].status === "fulfilled"
+        content: toolResults[index].status === 'fulfilled'
           ? toolResults[index].value
           : { error: toolResults[index].reason.message }
-      }));
+      }))
 
       // 添加工具调用和结果到消息历史
-      messages.push({ role: "assistant", content: response.content });
-      messages.push({ role: "user", content: toolResultsContent });
+      messages.push({ role: 'assistant', content: response.content })
+      messages.push({ role: 'user', content: toolResultsContent })
     }
 
-    throw new Error("超过最大轮数限制");
+    throw new Error('超过最大轮数限制')
   }
 
   private async callTool(tool: any): Promise<any> {
     // Web Search 是服务器端工具，由 Anthropic API 自动执行
     // 不需要手动实现，返回工具的输入参数即可
-    return tool.input;
+    return tool.input
   }
 }
 ```
@@ -423,18 +423,18 @@ function extractJSON(content: any[]): any {
 **完整流程**:
 ```typescript
 async function main() {
-  logger.info("开始执行 GitHub Trending 分析任务")
+  logger.info('开始执行 GitHub Trending 分析任务')
 
-  const apiKey = process.env.ANTHROPIC_API_KEY || ""
+  const apiKey = process.env.ANTHROPIC_API_KEY || ''
 
   // 1. 创建 Claude Tool Use 执行器
   const executor = new ToolUseExecutor(apiKey)
-  logger.info("已创建 Tool Use 执行器")
+  logger.info('已创建 Tool Use 执行器')
 
   // 2. 执行任务（Claude 自主决策）
   const agentPrompt = getAgentPrompt()
   const response = await executor.execute(agentPrompt)
-  logger.info("Claude 分析完成")
+  logger.info('Claude 分析完成')
 
   // 3. 提取 JSON 结果
   const analysis = extractJSON(response)
@@ -442,13 +442,13 @@ async function main() {
 
   // 4. 生成邮件
   const emailHtml = generateEmail(analysis)
-  logger.info("邮件模板已生成")
+  logger.info('邮件模板已生成')
 
   // 5. 发送邮件
   await sendEmail(emailHtml)
-  logger.info("邮件已发送")
+  logger.info('邮件已发送')
 
-  logger.info("任务完成！")
+  logger.info('任务完成！')
 }
 ```
 
@@ -462,8 +462,8 @@ async function main() {
 // ========================================
 
 export interface TrendingRepository {
-  name: string              // "owner/repo"
-  fullName: string          // "owner/repo"
+  name: string // "owner/repo"
+  fullName: string // "owner/repo"
   description: string
   language: string
   stars: number
@@ -477,10 +477,10 @@ export interface TrendingRepository {
 
 export interface ProjectAnalysis {
   name: string
-  summary: string              // 项目简介
-  techStack: string[]          // 主要技术栈
-  features: string[]           // 核心功能
-  trendingReason: string      // 为什么会 trending
+  summary: string // 项目简介
+  techStack: string[] // 主要技术栈
+  features: string[] // 核心功能
+  trendingReason: string // 为什么会 trending
   recommendationScore: number // 推荐指数 1-10
   recommendationReason: string // 推荐理由
 }
@@ -488,7 +488,7 @@ export interface ProjectAnalysis {
 export interface TrendingAnalysisResult {
   date: string
   projects: ProjectAnalysis[]
-  summary: string               // 今日重点推荐
+  summary: string // 今日重点推荐
 }
 
 // ========================================
@@ -584,8 +584,8 @@ name: GitHub Trending Daily
 
 on:
   schedule:
-    - cron: '0 9 * * *'  # 每天 09:00 UTC 执行
-  workflow_dispatch:     # 允许手动触发
+    - cron: '0 9 * * *' # 每天 09:00 UTC 执行
+  workflow_dispatch: # 允许手动触发
 
 jobs:
   send-trending:
@@ -678,7 +678,7 @@ bun install -D @types/node
 
 **工具实现示例**:
 ```typescript
-async function getTrendingRepositories(args: { limit?: number; language?: string; timeframe?: string }) {
+async function getTrendingRepositories(args: { limit?: number, language?: string, timeframe?: string }) {
   const url = buildTrendingURL(args.language, args.timeframe)
   const html = await fetch(url).then(r => r.text())
   const $ = cheerio.load(html)
@@ -714,92 +714,92 @@ async function getTrendingRepositories(args: { limit?: number; language?: string
 
 **核心逻辑**:
 ```typescript
-import Anthropic from "@anthropic-ai/sdk";
+import Anthropic from '@anthropic-ai/sdk'
 
- type ToolUse = {
-  type: "tool_use";
-  id: string;
-  name: string;
-  input: any;
-};
+interface ToolUse {
+  type: 'tool_use'
+  id: string
+  name: string
+  input: any
+}
 
-type Message = {
-  role: "user" | "assistant";
-  content: any[];
-};
+interface Message {
+  role: 'user' | 'assistant'
+  content: any[]
+}
 
 class ToolUseExecutor {
-  private anthropic: Anthropic;
-  private model: string;
+  private anthropic: Anthropic
+  private model: string
 
   constructor(apiKey: string) {
     // 支持自定义 API 端点
-    const baseURL = process.env.ANTHROPIC_BASE_URL;
+    const baseURL = process.env.ANTHROPIC_BASE_URL
 
     this.anthropic = new Anthropic({
       apiKey,
       baseURL: baseURL || undefined,
       defaultQuery: baseURL ? undefined : undefined
-    });
+    })
 
     // 支持自定义模型名称
-    this.model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4.5";
+    this.model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4.5'
   }
 
   async execute(initialPrompt: string): Promise<any[]> {
-    let messages: Message[] = [{ role: "user", content: initialPrompt }];
+    const messages: Message[] = [{ role: 'user', content: initialPrompt }]
 
     const tools = [
       {
-        type: "web_search_20250305",
-        name: "web_search",
+        type: 'web_search_20250305',
+        name: 'web_search',
         max_uses: 20
       }
-    ];
+    ]
 
-    let maxTurns = 30;
+    let maxTurns = 30
 
     while (maxTurns-- > 0) {
       const response = await this.anthropic.messages.create({
-        model: "claude-sonnet-4.5",
+        model: 'claude-sonnet-4.5',
         max_tokens: 4096,
         tools,
         messages
-      });
+      })
 
-      const toolUses = response.content.filter((c: any) => c.type === "tool_use");
+      const toolUses = response.content.filter((c: any) => c.type === 'tool_use')
 
       if (toolUses.length === 0) {
-        return response.content;
+        return response.content
       }
 
       const toolResults = await Promise.allSettled(
         toolUses.map((tool: ToolUse) => this.executeToolCall(tool))
-      );
+      )
 
       const toolResultsContent = toolUses.map((toolUse: ToolUse, index: number) => ({
-        type: "tool_result",
+        type: 'tool_result',
         tool_use_id: toolUse.id,
-        content: toolResults[index].status === "fulfilled"
+        content: toolResults[index].status === 'fulfilled'
           ? toolResults[index].value
           : { error: toolResults[index].reason.message }
-      }));
+      }))
 
-      messages.push({ role: "assistant", content: response.content });
-      messages.push({ role: "user", content: toolResultsContent });
+      messages.push({ role: 'assistant', content: response.content })
+      messages.push({ role: 'user', content: toolResultsContent })
     }
 
-    throw new Error("超过最大轮数限制");
+    throw new Error('超过最大轮数限制')
   }
 
   private async executeToolCall(tool: ToolUse): Promise<any> {
     // Web Search 是服务器端工具，由 Anthropic API 自动执行
     // 不需要手动实现，返回工具的输入参数即可
-    return tool.input;
+    return tool.input
   }
 }
 
-export { ToolUseExecutor };
+export { ToolUseExecutor }
 ```
 
 ### 第五步：实现 Claude Agent
@@ -864,7 +864,7 @@ export function getAgentPrompt(): string {
 - 每个项目最多使用 2 次 web_search
 - 总搜索次数不超过 20 次
 - 只分析前 10 个项目
-- 如果无法获取详细信息，基于项目描述和语言标签进行合理推断`;
+- 如果无法获取详细信息，基于项目描述和语言标签进行合理推断`
 }
 ```
 
@@ -905,74 +905,75 @@ export function getAgentPrompt(): string {
 
  **完整流程**:
 ```typescript
-import { query } from "@anthropic-ai/claude-agent-sdk";
-import { generateEmail } from "./email/emailGenerator";
-import { sendEmail } from "./email/emailSender";
-import { extractJSON } from "./utils/jsonExtractor";
-import { logger } from "./utils/logger";
-import { getAgentPrompt } from "./claude/agent";
+import { query } from '@anthropic-ai/claude-agent-sdk'
+import { getAgentPrompt } from './claude/agent'
+import { generateEmail } from './email/emailGenerator'
+import { sendEmail } from './email/emailSender'
+import { extractJSON } from './utils/jsonExtractor'
+import { logger } from './utils/logger'
 
 async function main() {
-  logger.info("开始执行 GitHub Trending 分析任务");
+  logger.info('开始执行 GitHub Trending 分析任务')
 
   try {
-    const messages: any[] = [];
+    const messages: any[] = []
 
     // 支持自定义模型配置
-    const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4.5";
+    const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4.5'
 
-     // 1. 执行任务（Claude 自主决策，使用 Agent SDK）
-    const agentPrompt = getAgentPrompt();
+    // 1. 执行任务（Claude 自主决策，使用 Agent SDK）
+    const agentPrompt = getAgentPrompt()
 
     for await (const message of query({
       prompt: agentPrompt,
       options: {
         model,
-        allowedTools: ["WebSearch"],
+        allowedTools: ['WebSearch'],
         mcpServers: {
           trending: {
-            command: "bun",
-            args: ["run", "./src/mcp/trendingServer.ts"]
+            command: 'bun',
+            args: ['run', './src/mcp/trendingServer.ts']
           }
         }
       }
     })) {
-      messages.push(message);
-      logger.debug(`收到消息: ${message.type}`);
+      messages.push(message)
+      logger.debug(`收到消息: ${message.type}`)
 
       // 检查是否完成
-      if (message.type === "result" &&
-          (message.subtype === "success" || message.subtype?.startsWith("error_"))) {
-        logger.info("Claude 分析完成");
-        break;
+      if (message.type === 'result'
+        && (message.subtype === 'success' || message.subtype?.startsWith('error_'))) {
+        logger.info('Claude 分析完成')
+        break
       }
 
-      if (message.type === "result" && message.subtype?.startsWith("error_")) {
-        const errorMsg = (message as any).errors?.join(", ") || "任务执行失败";
-        throw new Error(errorMsg);
+      if (message.type === 'result' && message.subtype?.startsWith('error_')) {
+        const errorMsg = (message as any).errors?.join(', ') || '任务执行失败'
+        throw new Error(errorMsg)
       }
     }
 
     // 2. 提取 JSON 结果
-    const analysis = extractJSON(messages);
-    logger.info(`成功分析了 ${analysis.projects.length} 个项目`);
+    const analysis = extractJSON(messages)
+    logger.info(`成功分析了 ${analysis.projects.length} 个项目`)
 
     // 3. 生成邮件
-    const emailHtml = generateEmail(analysis);
-    logger.info("邮件模板已生成");
+    const emailHtml = generateEmail(analysis)
+    logger.info('邮件模板已生成')
 
     // 4. 发送邮件
-    await sendEmail(emailHtml);
-    logger.info("邮件已发送");
+    await sendEmail(emailHtml)
+    logger.info('邮件已发送')
 
-    logger.info("任务完成！");
-  } catch (error) {
-    logger.error("任务执行失败:", error);
-    process.exit(1);
+    logger.info('任务完成！')
+  }
+  catch (error) {
+    logger.error('任务执行失败:', error)
+    process.exit(1)
   }
 }
 
-main();
+main()
 ```
 
 #### 方式B：使用 Client SDK
@@ -985,48 +986,49 @@ main();
 
  **完整流程**:
 ```typescript
-import { ToolUseExecutor } from "./claude/toolUseExecutor";
-import { generateEmail } from "./email/emailGenerator";
-import { sendEmail } from "./email/emailSender";
-import { extractJSON } from "./utils/jsonExtractor";
-import { logger } from "./utils/logger";
-import { getAgentPrompt } from "./claude/agent";
+import { getAgentPrompt } from './claude/agent'
+import { ToolUseExecutor } from './claude/toolUseExecutor'
+import { generateEmail } from './email/emailGenerator'
+import { sendEmail } from './email/emailSender'
+import { extractJSON } from './utils/jsonExtractor'
+import { logger } from './utils/logger'
 
 async function main() {
-  logger.info("开始执行 GitHub Trending 分析任务");
+  logger.info('开始执行 GitHub Trending 分析任务')
 
-  const apiKey = process.env.ANTHROPIC_API_KEY || "";
+  const apiKey = process.env.ANTHROPIC_API_KEY || ''
 
   try {
     // 1. 创建 Claude Tool Use 执行器（支持自定义 BASE_URL 和模型）
-    const executor = new ToolUseExecutor(apiKey);
-    logger.info("已创建 Tool Use 执行器");
+    const executor = new ToolUseExecutor(apiKey)
+    logger.info('已创建 Tool Use 执行器')
 
     // 2. 执行任务（Claude 自主决策）
-    const agentPrompt = getAgentPrompt();
-    const response = await executor.execute(agentPrompt);
-    logger.info("Claude 分析完成");
+    const agentPrompt = getAgentPrompt()
+    const response = await executor.execute(agentPrompt)
+    logger.info('Claude 分析完成')
 
     // 3. 提取 JSON 结果
-    const analysis = extractJSON(response);
-    logger.info(`成功分析了 ${analysis.projects.length} 个项目`);
+    const analysis = extractJSON(response)
+    logger.info(`成功分析了 ${analysis.projects.length} 个项目`)
 
     // 4. 生成邮件
-    const emailHtml = generateEmail(analysis);
-    logger.info("邮件模板已生成");
+    const emailHtml = generateEmail(analysis)
+    logger.info('邮件模板已生成')
 
     // 5. 发送邮件
-    await sendEmail(emailHtml);
-    logger.info("邮件已发送");
+    await sendEmail(emailHtml)
+    logger.info('邮件已发送')
 
-    logger.info("任务完成！");
-  } catch (error) {
-    logger.error("任务执行失败:", error);
-    process.exit(1);
+    logger.info('任务完成！')
+  }
+  catch (error) {
+    logger.error('任务执行失败:', error)
+    process.exit(1)
   }
 }
 
-main();
+main()
 ```
 
 ## 关键技术难点与解决方案

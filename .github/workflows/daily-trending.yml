@@ -2,8 +2,8 @@ name: GitHub Trending Daily
 
 on:
   schedule:
-    - cron: '0 9 * * *'  # 每天 09:00 UTC 执行
-  workflow_dispatch:     # 允许手动触发
+    - cron: '0 9 * * *' # 每天 09:00 UTC 执行
+  workflow_dispatch: # 允许手动触发
 
 jobs:
   send-trending:

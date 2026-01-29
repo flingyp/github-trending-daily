@@ -3,13 +3,13 @@
 // ========================================
 
 export interface TrendingRepository {
-  name: string;
-  fullName: string;
-  description: string;
-  language: string;
-  stars: number;
-  forks: number;
-  url: string;
+  name: string
+  fullName: string
+  description: string
+  language: string
+  stars: number
+  forks: number
+  url: string
 }
 
 // ========================================
@@ -17,19 +17,19 @@ export interface TrendingRepository {
 // ========================================
 
 export interface ProjectAnalysis {
-  name: string;
-  summary: string;
-  techStack: string[];
-  features: string[];
-  trendingReason: string;
-  recommendationScore: number;
-  recommendationReason: string;
+  name: string
+  summary: string
+  techStack: string[]
+  features: string[]
+  trendingReason: string
+  recommendationScore: number
+  recommendationReason: string
 }
 
 export interface TrendingAnalysisResult {
-  date: string;
-  projects: ProjectAnalysis[];
-  summary: string;
+  date: string
+  projects: ProjectAnalysis[]
+  summary: string
 }
 
 // ========================================
@@ -37,14 +37,31 @@ export interface TrendingAnalysisResult {
 // ========================================
 
 export interface EmailTemplate {
-  subject: string;
-  html: string;
-  to: string;
-  from: string;
+  subject: string
+  html: string
+  to: string
+  from: string
 }
 
 export interface EmailConfig {
-  from: string;
-  to: string;
-  subject?: string;
+  from: string
+  to: string
+  subject?: string
+}
+
+// ========================================
+// Claude Agent 消息类型
+// ========================================
+
+export interface ClaudeMessageContent {
+  type: string
+  text?: string
+}
+
+export interface ClaudeMessage {
+  type: string
+  subtype?: string
+  content?: ClaudeMessageContent[]
+  result?: string
+  errors?: string[]
 }

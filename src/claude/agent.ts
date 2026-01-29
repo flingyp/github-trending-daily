@@ -1,6 +1,6 @@
 export function getAgentPrompt(): string {
-  const today = new Date().toISOString().split('T')[0];
-  
+  const today = new Date().toISOString().split('T')[0]
+
   return `你是一个 GitHub Trending 分析专家。请完成以下任务：
 
 1. 调用 get_trending_repositories 工具获取今天的 GitHub Trending 项目列表（limit=10）
@@ -48,5 +48,5 @@ export function getAgentPrompt(): string {
 - 每个项目最多使用 2 次 WebSearch
 - 总搜索次数不超过 20 次
 - 只分析前 10 个项目
-- 如果无法获取详细信息，基于项目描述和语言标签进行合理推断`;
+- 如果无法获取详细信息，基于项目描述和语言标签进行合理推断`
 }

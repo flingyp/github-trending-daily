@@ -1,11 +1,18 @@
 #!/usr/bin/env bun
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import type { TrendingRepository } from '../../types/index.js'
+import { Server } from '@modelcontextprotocol/sdk/server/index.js'
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
-import * as cheerio from 'cheerio';
+} from '@modelcontextprotocol/sdk/types.js'
+import * as cheerio from 'cheerio'
+
+interface TrendingToolArgs {
+  limit?: number
+  language?: string
+  timeframe?: 'daily' | 'weekly' | 'monthly'
+}
 
 const server = new Server(
   {
@@ -16,8 +23,8 @@ const server = new Server(
     capabilities: {
       tools: {},
     },
-  }
-);
+  },
+)
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
@@ -47,24 +54,24 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
     ],
-  };
-});
+  }
+})
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (request.params.name === 'get_trending_repositories') {
-    const args = request.params.arguments as any;
-    const limit = args.limit || 10;
-    const language = args.language;
-    const timeframe = args.timeframe || 'daily';
+    const args = (request.params.arguments ?? {}) as TrendingToolArgs
+    const limit = typeof args.limit === 'number' ? args.limit : 10
+    const filterLanguage = args.language
+    const timeframe = (args.timeframe === 'weekly' || args.timeframe === 'monthly') ? args.timeframe : 'daily'
 
-    let url = 'https://github.com/trending';
+    let url = 'https://github.com/trending'
 
-    if (language) {
-      url += `/${language}`;
+    if (filterLanguage) {
+      url += `/${filterLanguage}`
     }
 
     if (timeframe !== 'daily') {
-      url += `?since=${timeframe}`;
+      url += `?since=${timeframe}`
     }
 
     try {
@@ -72,50 +79,51 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         },
-      });
+      })
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch GitHub Trending: ${response.statusText}`);
+        throw new Error(`Failed to fetch GitHub Trending: ${response.statusText}`)
       }
 
-      const html = await response.text();
-      const $ = cheerio.load(html);
-      const repositories: any[] = [];
+      const html = await response.text()
+      const $ = cheerio.load(html)
+      const repositories: TrendingRepository[] = []
 
       $('article.Box-row').each((index, element) => {
-        if (index >= limit) return false;
+        if (index >= limit)
+          return false
 
-        const $el = $(element);
-        const titleLink = $el.find('h2 a');
-        const name = titleLink.text().trim().replace(/\s+/g, '');
-        
-        const description = $el.find('p').first().text().trim();
-        
-        const languageSpan = $el.find('[itemprop="programmingLanguage"]').first();
-        const language = languageSpan.text().trim();
-        
-        const starsLink = $el.find('a[href*="/stargazers"]').first();
-        const starsText = starsLink.text().trim();
-        const stars = starsText ? parseInt(starsText.replace(/,/g, '')) : 0;
-        
-        const forksLink = $el.find('a[href*="/forks"]').first();
-        const forksText = forksLink.text().trim();
-        const forks = forksText ? parseInt(forksText.replace(/,/g, '')) : 0;
-        
-        const url = `https://github.com/${name}`;
+        const $el = $(element)
+        const titleLink = $el.find('h2 a')
+        const name = titleLink.text().trim().replace(/\s+/g, '')
+
+        const description = $el.find('p').first().text().trim()
+
+        const languageSpan = $el.find('[itemprop="programmingLanguage"]').first()
+        const repoLanguage = languageSpan.text().trim()
+
+        const starsLink = $el.find('a[href*="/stargazers"]').first()
+        const starsText = starsLink.text().trim()
+        const stars = starsText ? Number.parseInt(starsText.replace(/,/g, '')) : 0
+
+        const forksLink = $el.find('a[href*="/forks"]').first()
+        const forksText = forksLink.text().trim()
+        const forks = forksText ? Number.parseInt(forksText.replace(/,/g, '')) : 0
+
+        const repoUrl = `https://github.com/${name}`
 
         if (name) {
           repositories.push({
             name,
             fullName: name,
             description,
-            language,
+            language: repoLanguage,
             stars,
             forks,
-            url,
-          });
+            url: repoUrl,
+          })
         }
-      });
+      })
 
       return {
         content: [
@@ -124,19 +132,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             text: JSON.stringify(repositories, null, 2),
           },
         ],
-      };
-    } catch (error) {
+      }
+    }
+    catch (error: unknown) {
       return {
         content: [
           {
             type: 'text',
             text: JSON.stringify({
-              error: error instanceof Error ? error.message : 'Unknown error',
+              error: error instanceof Error ? error.message : String(error),
             }),
           },
         ],
         isError: true,
-      };
+      }
     }
   }
 
@@ -148,12 +157,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       },
     ],
     isError: true,
-  };
-});
+  }
+})
 
-async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+async function main(): Promise<void> {
+  const transport = new StdioServerTransport()
+  await server.connect(transport)
 }
 
-main();
+main()

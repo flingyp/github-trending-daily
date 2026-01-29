@@ -1,14 +1,13 @@
 {
   "name": "github-trending-daily",
-  "module": "src/index.ts",
   "type": "module",
   "private": true,
+  "module": "src/index.ts",
   "scripts": {
     "start": "bun run src/index.ts",
-    "dev": "bun --hot run src/index.ts"
-  },
-  "devDependencies": {
-    "@types/bun": "latest"
+    "dev": "bun --hot run src/index.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "peerDependencies": {
     "typescript": "^5"
@@ -18,5 +17,10 @@
     "@modelcontextprotocol/sdk": "^1.25.3",
     "cheerio": "^1.2.0",
     "resend": "^6.9.1"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^5.2.0",
+    "@types/bun": "latest",
+    "eslint": "^9.5.0"
   }
 }
