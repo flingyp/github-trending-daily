@@ -819,7 +819,7 @@ export { ToolUseExecutor }
 export function getAgentPrompt(): string {
   return `你是一个 GitHub Trending 分析专家。请完成以下任务：
 
-1. 调用 get_trending_repositories 工具获取今天的 GitHub Trending 项目列表（limit=10）
+1. 调用 get_trending_repositories 工具获取今天的 GitHub Trending 项目列表（limit=13）
 
 2. 对每个项目，使用 web_search 工具获取详细信息：
    - 第1次搜索：项目的 GitHub 页面概览

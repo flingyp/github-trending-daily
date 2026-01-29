@@ -24,12 +24,21 @@ export interface ProjectAnalysis {
   trendingReason: string
   recommendationScore: number
   recommendationReason: string
+  isNewProject?: boolean
+  starsChange?: number | null
+  popularityTrend?: 'new' | 'rising' | 'stable' | 'declining'
+  highlightLevel?: 'top' | 'recommended' | 'watch'
+  category?: string
 }
 
 export interface TrendingAnalysisResult {
   date: string
   projects: ProjectAnalysis[]
   summary: string
+  theme?: string
+  topProject?: ProjectAnalysis
+  techTrends?: string[]
+  newProjectCount?: number
 }
 
 // ========================================
