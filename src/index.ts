@@ -7,6 +7,86 @@ import { sendEmail } from './email/emailSender.js'
 import { extractJSON } from './utils/jsonExtractor.js'
 import { logger } from './utils/logger.js'
 
+function isTruthy(value: string | undefined): boolean {
+  if (!value)
+    return false
+  return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase())
+}
+
+const logLlmOutput = isTruthy(process.env.LOG_LLM_OUTPUT)
+const logLlmStream = isTruthy(process.env.LOG_LLM_STREAM)
+let hasStreamedText = false
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function getStreamEventType(event: unknown): string | null {
+  if (!isRecord(event))
+    return null
+  return typeof event.type === 'string' ? event.type : null
+}
+
+function extractStreamText(event: unknown): string | null {
+  if (!isRecord(event))
+    return null
+
+  if (event.type === 'content_block_delta') {
+    const delta = event.delta
+    if (isRecord(delta) && delta.type === 'text_delta' && typeof delta.text === 'string')
+      return delta.text
+  }
+
+  if (event.type === 'content_block_start') {
+    const contentBlock = event.content_block
+    if (isRecord(contentBlock) && contentBlock.type === 'text' && typeof contentBlock.text === 'string' && contentBlock.text.length > 0)
+      return contentBlock.text
+  }
+
+  return null
+}
+
+function ensureStreamNewline(): void {
+  if (!hasStreamedText)
+    return
+  process.stdout.write('\n')
+  hasStreamedText = false
+}
+
+function logClaudeOutput(message: ClaudeMessage): void {
+  if (!logLlmOutput && !logLlmStream)
+    return
+
+  if (logLlmStream && message.type === 'stream_event') {
+    const text = extractStreamText(message.event)
+    if (text) {
+      hasStreamedText = true
+      process.stdout.write(text)
+      return
+    }
+
+    const eventType = getStreamEventType(message.event)
+    if (eventType === 'message_stop')
+      ensureStreamNewline()
+    return
+  }
+
+  if (logLlmOutput && !logLlmStream) {
+    if (message.type === 'assistant' && Array.isArray(message.content)) {
+      for (const item of message.content) {
+        if (item?.type === 'text' && item.text) {
+          logger.info(`[LLM] ${item.text}`)
+        }
+      }
+      return
+    }
+
+    if (message.type === 'result' && message.result) {
+      logger.info(`[LLM RESULT]\n${message.result}`)
+    }
+  }
+}
+
 async function main(): Promise<void> {
   logger.info('开始执行 GitHub Trending 分析任务')
 
@@ -27,6 +107,7 @@ async function main(): Promise<void> {
       options: {
         model,
         allowedTools: ['WebSearch', 'mcp__trending__get_trending_repositories'],
+        includePartialMessages: logLlmStream,
         mcpServers: {
           trending: {
             command: 'bun',
@@ -38,10 +119,13 @@ async function main(): Promise<void> {
       },
     }) as AsyncIterable<ClaudeMessage>) {
       messages.push(message)
-      logger.debug(`收到消息: ${message.type}`)
+      logClaudeOutput(message)
+      if (!logLlmStream)
+        logger.debug(`收到消息: ${message.type}`)
 
       if (message.type === 'result'
         && (message.subtype === 'success' || message.subtype?.startsWith('error_'))) {
+        ensureStreamNewline()
         logger.info('Claude 分析完成')
 
         if (message.subtype?.startsWith('error_')) {

@@ -59,7 +59,6 @@ export async function sendEmail(html: string): Promise<void> {
   try {
     if (isDevelopment || !emailSendEnabled) {
       logger.info('开发模式或已关闭邮件发送，改为输出邮件内容到控制台')
-      console.log(html)
       return
     }
 

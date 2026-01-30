@@ -73,4 +73,6 @@ export interface ClaudeMessage {
   content?: ClaudeMessageContent[]
   result?: string
   errors?: string[]
+  event?: unknown
+  parent_tool_use_id?: string | null
 }

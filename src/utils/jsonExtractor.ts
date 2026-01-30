@@ -9,21 +9,21 @@ export function extractJSON(messages: ClaudeMessage[]): TrendingAnalysisResult {
     const message = messages[i]
     if (!message)
       continue
-    logger.info(`extractJSON: 消息 ${i} type=${message.type}, hasContent=${!!message.content}, contentLength=${Array.isArray(message.content) ? message.content.length : 'N/A'}`)
+    // logger.info(`extractJSON: 消息 ${i} type=${message.type}, hasContent=${!!message.content}, contentLength=${Array.isArray(message.content) ? message.content.length : 'N/A'}`)
 
     if (message.type === 'assistant') {
       const content = message.content
       if (Array.isArray(content)) {
-        logger.info(`extractJSON: 消息 ${i} 是 assistant 类型，有 ${content.length} 个 content item`)
+        // logger.info(`extractJSON: 消息 ${i} 是 assistant 类型，有 ${content.length} 个 content item`)
         for (let j = 0; j < content.length; j++) {
           const item = content[j]
           if (!item)
             continue
-          logger.info(`extractJSON:   item ${j} type=${item.type}, hasText=${!!item.text}, textLength=${item.text ? item.text.length : 0}`)
+          // logger.info(`extractJSON:   item ${j} type=${item.type}, hasText=${!!item.text}, textLength=${item.text ? item.text.length : 0}`)
           if (item.type === 'text' && item.text) {
             const parsed = tryExtractJSON(item.text)
             if (parsed) {
-              logger.info(`extractJSON: 从消息 ${i} 的第 ${j} 个 content item 中提取到 JSON`)
+              // logger.info(`extractJSON: 从消息 ${i} 的第 ${j} 个 content item 中提取到 JSON`)
               return parsed
             }
           }
@@ -33,7 +33,7 @@ export function extractJSON(messages: ClaudeMessage[]): TrendingAnalysisResult {
     else if (message.type === 'result' && message.result) {
       const parsed = tryExtractJSON(message.result)
       if (parsed) {
-        logger.info(`extractJSON: 从消息 ${i} 的 result 字段中提取到 JSON`)
+        // logger.info(`extractJSON: 从消息 ${i} 的 result 字段中提取到 JSON`)
         return parsed
       }
     }

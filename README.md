@@ -49,6 +49,10 @@ NODE_ENV=development     # 开发模式下自动不发送邮件
 
 # 日志配置
 LOG_LEVEL=info
+# 打印大模型输出（可选）
+LOG_LLM_OUTPUT=false
+# 流式打印大模型输出（可选）
+LOG_LLM_STREAM=false
 ```
 
 ### 3. 本地运行
