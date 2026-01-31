@@ -97,7 +97,11 @@ async function main(): Promise<void> {
 
     const messages: ClaudeMessage[] = []
     const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4.5'
-    const agentPrompt = getAgentPrompt()
+    const maxRepos = process.env.MAX_TRENDING_REPOS ? Number.parseInt(process.env.MAX_TRENDING_REPOS) : undefined
+    if (maxRepos) {
+      logger.warn(`降级模式：已设置 MAX_TRENDING_REPOS=${maxRepos}，最多分析前 ${maxRepos} 个项目`)
+    }
+    const agentPrompt = getAgentPrompt(maxRepos)
 
     logger.info('开始执行 Claude Agent 分析任务...')
     logger.debug(`使用模型: ${model}`)
@@ -114,7 +118,10 @@ async function main(): Promise<void> {
             args: ['run', './src/mcp/trendingMcpServer.ts'],
           },
         },
-        tools: [],
+        tools: {
+          type: 'preset',
+          preset: 'claude_code',
+        },
         disallowedTools: ['Bash', 'Read', 'Edit', 'Write', 'Glob', 'Grep'],
       },
     }) as AsyncIterable<ClaudeMessage>) {

@@ -7,6 +7,7 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js'
 import * as cheerio from 'cheerio'
+import { logger } from '../utils/logger.js'
 
 interface TrendingToolArgs {
   limit?: number
@@ -37,8 +38,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {
             limit: {
               type: 'number',
-              description: '返回数量，默认 13',
-              default: 13,
+              description: '返回数量，不设置则返回所有项目',
             },
             language: {
               type: 'string',
@@ -60,7 +60,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (request.params.name === 'get_trending_repositories') {
     const args = (request.params.arguments ?? {}) as TrendingToolArgs
-    const limit = typeof args.limit === 'number' ? args.limit : 13
+    const limit = typeof args.limit === 'number' ? args.limit : undefined
     const filterLanguage = args.language
     const timeframe = (args.timeframe === 'weekly' || args.timeframe === 'monthly') ? args.timeframe : 'daily'
 
@@ -90,7 +90,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const repositories: TrendingRepository[] = []
 
       $('article.Box-row').each((index, element) => {
-        if (index >= limit)
+        if (limit !== undefined && index >= limit)
           return false
 
         const $el = $(element)
@@ -124,6 +124,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           })
         }
       })
+
+      logger.debug(`成功抓取 ${repositories.length} 个 GitHub Trending 项目`)
 
       return {
         content: [

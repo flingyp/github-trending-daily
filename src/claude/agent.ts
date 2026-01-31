@@ -1,9 +1,12 @@
-export function getAgentPrompt(): string {
+export function getAgentPrompt(limitOverride?: number): string {
   const today = new Date().toISOString().split('T')[0]
+  const limitText = limitOverride
+    ? `- 只分析前 ${limitOverride} 个项目（降级模式）\n- 如果工具返回超过 ${limitOverride} 个项目，先分析前 ${limitOverride} 个，确保完成任务`
+    : '- 分析所有获取到的项目\n- 如果工具返回超过 15 个项目，可以先分析前 15 个，确保完成任务'
 
   return `你是一个 GitHub Trending 分析专家。请完成以下任务：
 
-1. 调用 get_trending_repositories 工具获取今天的 GitHub Trending 项目列表（limit=13）
+1. 调用 get_trending_repositories 工具获取今天的 GitHub Trending 项目列表
 
 2. 对每个项目，使用 WebSearch 工具获取详细信息：
     - 第1次搜索：项目的 GitHub 页面概览
@@ -100,8 +103,8 @@ export function getAgentPrompt(): string {
 
 重要限制：
 - 每个项目最多使用 2 次 WebSearch
-- 总搜索次数不超过 20 次
-- 只分析前 10 个项目
+- 总搜索次数不超过 30 次
+- ${limitText}
 - 确保有且仅有 1 个项目的 highlightLevel="top"
 - 2-3 个项目的 highlightLevel="recommended"
 - 其余项目的 highlightLevel="watch"
