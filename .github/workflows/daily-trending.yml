@@ -30,6 +30,7 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
           RESEND_TO_EMAIL: ${{ secrets.RESEND_TO_EMAIL }}
+          TRENDING_LANGUAGES: ${{ secrets.TRENDING_LANGUAGES }}
           EMAIL_SEND_ENABLED: true
           NODE_ENV: production
           LOG_LEVEL: info
